@@ -1,6 +1,6 @@
-// --- API Utility Functions (utils/api.ts) ---
+import { TranscribeResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://praveen200526-gg.hf.space/';
 
 /**
  * Creates and retrieves a unique session ID from localStorage.
@@ -9,10 +9,8 @@ const API_BASE_URL = 'http://localhost:5000';
 export const getOrCreateSessionId = (): string => {
   let sessionId = localStorage.getItem('ganesha_session_id');
   if (!sessionId) {
-    // A simple way to generate a unique enough ID for this purpose
     sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     localStorage.setItem('ganesha_session_id', sessionId);
-    console.log("New session started:", sessionId);
   }
   return sessionId;
 };
@@ -21,12 +19,11 @@ export const getOrCreateSessionId = (): string => {
  * Sends an audio blob to the backend for transcription and response.
  * @param {Blob} audioBlob - The recorded audio data.
  * @param {string} sessionId - The user's unique session ID.
- * @returns {Promise<any>} The JSON response from the server.
+ * @returns {Promise<TranscribeResponse>} The JSON response from the server.
  */
-export const transcribeAudio = async (audioBlob: Blob, sessionId: string): Promise<any> => {
+export const transcribeAudio = async (audioBlob: Blob, sessionId: string): Promise<TranscribeResponse> => {
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
-  // **IMPORTANT**: Send the session_id along with the audio file
   formData.append('session_id', sessionId);
 
   const response = await fetch(`${API_BASE_URL}/transcribe`, {
@@ -45,16 +42,17 @@ export const transcribeAudio = async (audioBlob: Blob, sessionId: string): Promi
  * Sends a text message to the backend for a response.
  * @param {string} message - The user's text message.
  * @param {string} sessionId - The user's unique session ID.
- * @returns {Promise<any>} The JSON response from the server.
+ * @param {boolean} speakResponse - Whether the backend should generate audio.
+ * @returns {Promise<TranscribeResponse>} The JSON response from the server.
  */
-export const sendTextMessage = async (message: string, sessionId: string): Promise<any> => {
+export const sendTextMessage = async (message: string, sessionId: string, speakResponse: boolean): Promise<TranscribeResponse> => {
   const response = await fetch(`${API_BASE_URL}/text-message`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    // **IMPORTANT**: Send the session_id in the JSON body
-    body: JSON.stringify({ message, session_id: sessionId }),
+    // --- MODIFIED: Send the speak_response flag to the backend ---
+    body: JSON.stringify({ message, session_id: sessionId, speak_response: speakResponse }),
   });
 
   if (!response.ok) {
